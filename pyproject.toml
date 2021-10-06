@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "balami"
+version = "0.1.0"
+description = "Declarative approach to parsing python. Hopefully is any good."
+authors = ["Piotr Szpetkowski <piotr.szpetkowski@pyquest.space>"]
+license = "MIT"
+packages = [
+    { include = "balami", from = "src" },
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+pre-commit = "^2.15.0"
+black = "^21.9b0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
