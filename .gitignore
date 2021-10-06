@@ -1,0 +1,27 @@
+# IDE files
+.idea/
+.vscode/
+
+# Distribution
+build/
+dist/
+*.egg-info/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test files
+.mypy_cache/
+.cache/
+.tox/
+.coverage
+htmlcov/
+
+# virtualenv
+.venv/
+venv/
+
+# osx
+*.DS_Store
