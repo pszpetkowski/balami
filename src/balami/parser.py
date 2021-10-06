@@ -1,7 +1,7 @@
 import tokenize
 from io import StringIO
 
-from balami.base import BaseNode, NODE_REGISTRY
+from balami.base import NODE_REGISTRY, BaseNode
 
 
 class Parser:
@@ -36,7 +36,7 @@ class Parser:
                         node_tokens = []
                         break
                 else:
-                    raise RuntimeError(f"Could not parse")
+                    raise RuntimeError("Could not parse")
 
             if token.type != tokenize.NEWLINE:
                 node_tokens.append(token)
