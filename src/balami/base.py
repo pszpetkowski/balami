@@ -5,7 +5,8 @@ from typing import TypedDict, TypeVar
 
 NODE_REGISTRY: list[type[BaseNode]] = []
 
-T = TypeVar("T", bound="BaseNode")
+TNode = TypeVar("TNode", bound="BaseNode")
+TToken = TypeVar("TToken", bound="BaseTokenDescriptor")
 
 
 class TokenStructureDict(TypedDict):
@@ -26,11 +27,13 @@ class ChildrenDescriptor(BaseDescriptor):
         separator: BaseTokenDescriptor,
         attr: str,
         required: bool = True,
+        constraints: list | None = None,
     ) -> None:
         self.node = node
         self.separator = separator
         self.attr = attr
         self.required = required
+        self.constraints = constraints or []
 
 
 class BaseTokenDescriptor(BaseDescriptor):
@@ -43,16 +46,17 @@ class BaseTokenDescriptor(BaseDescriptor):
         attr: str | None = None,
         required: bool = True,
     ) -> None:
-        if not value and not typ:
-            raise RuntimeError(
-                "either expected value or expected type needs to be provided"
-            )
-        elif value and typ:
+        if value and typ:
             raise RuntimeError("cannot provide both expected value and type")
 
         self._value = value
         self._typ = typ
+        self._alt: list[BaseTokenDescriptor] = []
         super().__init__(attr, required)
+
+    def __or__(self: TToken, other: TToken) -> TToken:
+        self._alt.append(other)
+        return self
 
     def match_token(self, py_token: tokenize.TokenInfo) -> str | None:
         ...
@@ -87,8 +91,8 @@ class BaseNode:
 
     @classmethod
     def match(
-        cls: type[T], py_tokens: list[tokenize.TokenInfo], exhausting: bool = True
-    ) -> T | None:
+        cls: type[TNode], py_tokens: list[tokenize.TokenInfo], exhausting: bool = True
+    ) -> TNode | None:
         pattern_tokens, matched_tokens, child_nodes = cls._match_structure(
             py_tokens, exhausting
         )
@@ -138,22 +142,45 @@ class BaseNode:
 
             # Otherwise simply handle the simple descriptor
             # respecting the required property
-            if not descriptor_required:
-                if pattern_descriptor.PY_TOKEN == found_token.type:
-                    pattern_tokens.append(pattern_descriptor)
-                    matched_tokens.append(found_token)
-                    del py_tokens[0]
-            elif pattern_descriptor.PY_TOKEN == found_token.type:
-                pattern_tokens.append(pattern_descriptor)
-                matched_tokens.append(found_token)
-                del py_tokens[0]
-            elif pattern_descriptor.PY_TOKEN != found_token.type:
-                raise RuntimeError("Structure not matched")
+            pattern_token, matched_token = cls._handle_token_descriptor(
+                pattern_descriptor, descriptor_required, found_token, py_tokens
+            )
+            if pattern_token and matched_token:
+                pattern_tokens.append(pattern_token)
+                matched_tokens.append(matched_token)
 
         if exhausting and py_tokens:
             raise RuntimeError("Structure not matched")
 
         return pattern_tokens, matched_tokens, child_nodes
+
+    @classmethod
+    def _handle_token_descriptor(
+        cls,
+        pattern_descriptor: BaseTokenDescriptor,
+        descriptor_required: bool,
+        found_token: tokenize.TokenInfo,
+        py_tokens: list[tokenize.TokenInfo],
+    ):
+        pattern_token, matched_token = None, None
+        if not descriptor_required:
+            if pattern_descriptor.PY_TOKEN == found_token.exact_type:
+                pattern_token = pattern_descriptor
+                matched_token = found_token
+                del py_tokens[0]
+        elif pattern_descriptor.PY_TOKEN == found_token.exact_type:
+            pattern_token = pattern_descriptor
+            matched_token = found_token
+            del py_tokens[0]
+        elif pattern_descriptor.PY_TOKEN != found_token.exact_type:
+            if pattern_descriptor._alt:
+                for descriptor in pattern_descriptor._alt:
+                    return cls._handle_token_descriptor(
+                        descriptor, descriptor_required, found_token, py_tokens
+                    )
+            raise RuntimeError("Structure not matched")
+
+        return pattern_token, matched_token
 
     @classmethod
     def _handle_children_descriptor(
@@ -172,8 +199,11 @@ class BaseNode:
             found_token = py_tokens[0] if py_tokens else None
             if (
                 found_token
-                and pattern_descriptor.separator.PY_TOKEN == found_token.type
+                and pattern_descriptor.separator.PY_TOKEN == found_token.exact_type
             ):
                 del py_tokens[0]
 
+        for constraint in pattern_descriptor.constraints:
+            if not constraint.validate(nodes):
+                raise SyntaxError("Constraint error")
         return nodes
