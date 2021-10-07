@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from balami.base import BaseNode, ChildrenDescriptor
+from balami.constraints import CountConstraint
 from balami.tokens import (
     CommaTokenDescriptor,
     LParTokenDescriptor,
@@ -8,18 +9,6 @@ from balami.tokens import (
     RParTokenDescriptor,
     StarTokenDescriptor,
 )
-
-
-class CountConstraint:
-    def __init__(self, count: int, condition) -> None:
-        self._count = count
-        self._condition = condition
-
-    def validate(self, nodes: list[BaseNode]) -> bool:
-        if not self._condition or (self._condition and self._condition(nodes)):
-            return len(nodes) <= self._count
-
-        return True
 
 
 class ModuleImportNode(BaseNode, register=False):
