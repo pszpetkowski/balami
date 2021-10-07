@@ -16,34 +16,6 @@ class NameTokenDescriptor(BaseTokenDescriptor):
             return None
 
 
-class CommaTokenDescriptor(BaseTokenDescriptor):
-    PY_TOKEN = tokenize.COMMA
-
-    def match_token(self, py_token: tokenize.TokenInfo) -> str | None:
-        return True
-
-
-class LParTokenDescriptor(BaseTokenDescriptor):
-    PY_TOKEN = tokenize.LPAR
-
-    def match_token(self, py_token: tokenize.TokenInfo) -> str | None:
-        return True
-
-
-class RParTokenDescriptor(BaseTokenDescriptor):
-    PY_TOKEN = tokenize.RPAR
-
-    def match_token(self, py_token: tokenize.TokenInfo) -> str | None:
-        return True
-
-
-class StarTokenDescriptor(BaseTokenDescriptor):
-    PY_TOKEN = tokenize.STAR
-
-    def match_token(self, py_token: tokenize.TokenInfo) -> str | None:
-        return True
-
-
 class OpTokenDescriptor(BaseTokenDescriptor):
     PY_TOKEN = tokenize.OP
 
@@ -55,3 +27,19 @@ class OpTokenDescriptor(BaseTokenDescriptor):
             return actual_value
         else:
             return None
+
+
+class CommaTokenDescriptor(BaseTokenDescriptor):
+    PY_TOKEN = tokenize.COMMA
+
+
+class LParTokenDescriptor(BaseTokenDescriptor):
+    PY_TOKEN = tokenize.LPAR
+
+
+class RParTokenDescriptor(BaseTokenDescriptor):
+    PY_TOKEN = tokenize.RPAR
+
+
+class StarTokenDescriptor(BaseTokenDescriptor):
+    PY_TOKEN = tokenize.STAR

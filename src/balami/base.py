@@ -59,7 +59,7 @@ class BaseTokenDescriptor(BaseDescriptor):
         return self
 
     def match_token(self, py_token: tokenize.TokenInfo) -> str | None:
-        ...
+        return py_token.string
 
 
 class BaseNode:
