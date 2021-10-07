@@ -4,11 +4,11 @@ from io import StringIO
 from balami.base import NODE_REGISTRY, BaseNode
 
 
-class Parser:
+class Balami:
     def __init__(self) -> None:
         self._cached_lines: dict[str, BaseNode] = {}
 
-    def run(self, s: str) -> list[BaseNode]:
+    def parse_str(self, s: str) -> list[BaseNode]:
         tokens = tokenize.generate_tokens(StringIO(s).readline)
         nodes: list[BaseNode] = []
         node_tokens: list[tokenize.TokenInfo] = []
