@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import tokenize
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from balami.types import Constraint, TNode, TokenStructureDict
+from balami.types import Constraint, TNode, TokenStructureDict
 
 NODE_REGISTRY: list[type[BaseNode]] = []
 
