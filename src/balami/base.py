@@ -1,17 +1,12 @@
 from __future__ import annotations
 
 import tokenize
-from typing import TypedDict, TypeVar
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from balami.types import Constraint, TNode, TokenStructureDict
 
 NODE_REGISTRY: list[type[BaseNode]] = []
-
-TNode = TypeVar("TNode", bound="BaseNode")
-TToken = TypeVar("TToken", bound="BaseTokenDescriptor")
-
-
-class TokenStructureDict(TypedDict):
-    descriptor: BaseTokenDescriptor | ChildrenDescriptor
-    required: bool
 
 
 class BaseDescriptor:
@@ -27,7 +22,7 @@ class ChildrenDescriptor(BaseDescriptor):
         separator: BaseTokenDescriptor,
         attr: str,
         required: bool = True,
-        constraints: list | None = None,
+        constraints: list[Constraint] | None = None,
     ) -> None:
         self.node = node
         self.separator = separator
@@ -51,11 +46,11 @@ class BaseTokenDescriptor(BaseDescriptor):
 
         self._value = value
         self._typ = typ
-        self._alt: list[BaseTokenDescriptor] = []
+        self.alt: list[BaseTokenDescriptor] = []
         super().__init__(attr, required)
 
-    def __or__(self: TToken, other: TToken) -> TToken:
-        self._alt.append(other)
+    def __or__(self, other: BaseTokenDescriptor) -> BaseTokenDescriptor:
+        self.alt.append(other)
         return self
 
     def match_token(self, py_token: tokenize.TokenInfo) -> str | None:
@@ -161,7 +156,7 @@ class BaseNode:
         descriptor_required: bool,
         found_token: tokenize.TokenInfo,
         py_tokens: list[tokenize.TokenInfo],
-    ):
+    ) -> tuple[BaseTokenDescriptor | None, tokenize.TokenInfo | None]:
         pattern_token, matched_token = None, None
         if not descriptor_required:
             if pattern_descriptor.PY_TOKEN == found_token.exact_type:
@@ -173,11 +168,10 @@ class BaseNode:
             matched_token = found_token
             del py_tokens[0]
         elif pattern_descriptor.PY_TOKEN != found_token.exact_type:
-            if pattern_descriptor._alt:
-                for descriptor in pattern_descriptor._alt:
-                    return cls._handle_token_descriptor(
-                        descriptor, descriptor_required, found_token, py_tokens
-                    )
+            for descriptor in pattern_descriptor.alt:
+                return cls._handle_token_descriptor(
+                    descriptor, descriptor_required, found_token, py_tokens
+                )
             raise RuntimeError("Structure not matched")
 
         return pattern_token, matched_token
