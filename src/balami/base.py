@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-import tokenize
-
-from balami.types import Constraint, TNode, TokenStructureDict
+from balami.types import Constraint, TNode, TokenInfo, TokenStructureDict
 
 NODE_REGISTRY: list[type[BaseNode]] = []
 
@@ -51,7 +49,7 @@ class BaseTokenDescriptor(BaseDescriptor):
         self.alt.append(other)
         return self
 
-    def match_token(self, py_token: tokenize.TokenInfo) -> str | None:
+    def match_token(self, py_token: TokenInfo) -> str | None:
         return py_token.string
 
 
@@ -84,7 +82,7 @@ class BaseNode:
 
     @classmethod
     def match(
-        cls: type[TNode], py_tokens: list[tokenize.TokenInfo], exhausting: bool = True
+        cls: type[TNode], py_tokens: list[TokenInfo], exhausting: bool = True
     ) -> TNode | None:
         pattern_tokens, matched_tokens, child_nodes = cls._match_structure(
             py_tokens, exhausting
@@ -109,10 +107,10 @@ class BaseNode:
 
     @classmethod
     def _match_structure(
-        cls, py_tokens: list[tokenize.TokenInfo], exhausting: bool
-    ) -> tuple[list[BaseTokenDescriptor], list[tokenize.TokenInfo], list[BaseNode]]:
+        cls, py_tokens: list[TokenInfo], exhausting: bool
+    ) -> tuple[list[BaseTokenDescriptor], list[TokenInfo], list[BaseNode]]:
         pattern_tokens: list[BaseTokenDescriptor] = []
-        matched_tokens: list[tokenize.TokenInfo] = []
+        matched_tokens: list[TokenInfo] = []
         child_nodes: list[BaseNode] = []
         for descriptor_structure in cls._py_structure:
             pattern_descriptor = descriptor_structure["descriptor"]
@@ -152,9 +150,9 @@ class BaseNode:
         cls,
         pattern_descriptor: BaseTokenDescriptor,
         descriptor_required: bool,
-        found_token: tokenize.TokenInfo,
-        py_tokens: list[tokenize.TokenInfo],
-    ) -> tuple[BaseTokenDescriptor | None, tokenize.TokenInfo | None]:
+        found_token: TokenInfo,
+        py_tokens: list[TokenInfo],
+    ) -> tuple[BaseTokenDescriptor | None, TokenInfo | None]:
         pattern_token, matched_token = None, None
         if not descriptor_required:
             if pattern_descriptor.PY_TOKEN == found_token.exact_type:
@@ -176,7 +174,7 @@ class BaseNode:
 
     @classmethod
     def _handle_children_descriptor(
-        cls, pattern_descriptor: ChildrenDescriptor, py_tokens: list[tokenize.TokenInfo]
+        cls, pattern_descriptor: ChildrenDescriptor, py_tokens: list[TokenInfo]
     ) -> list[BaseNode]:
         nodes: list[BaseNode] = []
         while True:
