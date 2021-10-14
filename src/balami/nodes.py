@@ -13,7 +13,10 @@ from balami.tokens import (
 
 
 class ModuleImportNode(BaseNode, register=False):
-    def __init__(self, module: str, _as: str | None, alias: str | None = None) -> None:
+    def __init__(
+        self, module: str, _as: str | None = None, alias: str | None = None
+    ) -> None:
+        super().__init__()
         self.module = module
         self._as = _as
         self.alias = alias

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from balami.errors import ValidationError
 from balami.types import Constraint, TNode, TokenInfo, TokenStructureDict
 
 NODE_REGISTRY: list[type[BaseNode]] = []
@@ -70,6 +71,7 @@ class BaseNode:
             NODE_REGISTRY.append(cls)
 
     def __init__(self, **kwargs: dict[str, str]) -> None:
+        self.errors = []
         for key, value in kwargs.items():
             setattr(self, key, value)
 
@@ -79,6 +81,14 @@ class BaseNode:
             for field_name in self.__repr_fields__
         ]
         return f"<{type(self).__name__ }({', '.join(values)})>"
+
+    def _validate(self):
+        errors = self.validate()
+        if errors:
+            self.errors = errors
+
+    def validate(self) -> list[ValidationError]:
+        ...
 
     @classmethod
     def match(
@@ -103,7 +113,10 @@ class BaseNode:
             if node.parent_attr not in children_data:
                 children_data[node.parent_attr] = []
             children_data[node.parent_attr].append(node)
-        return cls(**children_data, **instance_data)
+
+        node = cls(**children_data, **instance_data)
+        node._validate()
+        return node
 
     @classmethod
     def _match_structure(
