@@ -51,6 +51,9 @@ class ImportNode(BaseNode, register=True):
     PATTERN = [
         NameTokenDescriptor(value="import"),
         ChildrenDescriptor(
+            constraints=[
+                MaxCountConstraint(max=0, condition=ModuleImportNode.is_star_import),
+            ],
             node=ModuleImportNode,
             separator=CommaTokenDescriptor(required=False),
             attr="modules",
