@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from balami.base import BaseNode, ChildrenDescriptor
-from balami.constraints import FuncConstraint, MaxCountConstraint
+from balami.constraints import MaxCountConstraint
+from balami.errors import ValidationError
 from balami.tokens import (
     CommaTokenDescriptor,
     LParTokenDescriptor,
@@ -12,8 +13,9 @@ from balami.tokens import (
 
 
 class ModuleImportNode(BaseNode, register=False):
-    def __init__(self, module: str, alias: str | None = None) -> None:
+    def __init__(self, module: str, _as: str | None, alias: str | None = None) -> None:
         self.module = module
+        self._as = _as
         self.alias = alias
 
     __repr_fields__ = ["module", "alias"]
@@ -21,20 +23,26 @@ class ModuleImportNode(BaseNode, register=False):
     PATTERN = [
         NameTokenDescriptor(typ=str, attr="module")
         | StarTokenDescriptor(value="*", attr="module"),
-        NameTokenDescriptor(value="as", required=False),
+        NameTokenDescriptor(value="as", attr="_as", required=False),
         NameTokenDescriptor(typ=str, attr="alias", required=False),
     ]
+
+    def validate(self) -> list[ValidationError]:
+        errors: list[ValidationError] = []
+
+        if self._as and not self.alias:
+            errors.append(
+                ValidationError("Keyword 'as' was provided but no alias was found")
+            )
+
+        if self.module == "*" and self.alias:
+            errors.append(ValidationError("Star import cannot be aliased"))
+
+        return errors
 
     @staticmethod
     def is_star_import(nodes: list[ModuleImportNode]) -> bool:
         return any([n.module == "*" for n in nodes])
-
-    @staticmethod
-    def star_import_no_alias(nodes: list[ModuleImportNode]) -> bool:
-        for node in nodes:
-            if node.module == "*" and node.alias:
-                return False
-        return True
 
 
 class ImportNode(BaseNode, register=True):
@@ -62,7 +70,6 @@ class ImportFromNode(BaseNode, register=True):
         ChildrenDescriptor(
             constraints=[
                 MaxCountConstraint(max=1, condition=ModuleImportNode.is_star_import),
-                FuncConstraint(func=ModuleImportNode.star_import_no_alias),
             ],
             node=ModuleImportNode,
             separator=CommaTokenDescriptor(required=False),
