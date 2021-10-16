@@ -14,6 +14,7 @@ __pycache__/
 
 # Test files
 .mypy_cache/
+.pytest_cache/
 .cache/
 .tox/
 .coverage
