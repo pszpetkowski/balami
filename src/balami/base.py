@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+from collections import defaultdict
+from typing import TYPE_CHECKING
+
 from balami.errors import ValidationError
-from balami.types import Constraint, TNode, TokenInfo, TokenStructureDict
 
-NODE_REGISTRY: list[type[BaseNode]] = []
-
+if TYPE_CHECKING:
+    from balami.types import (
+        ChildNodesDict,
+        Constraint,
+        TNode,
+        TokenInfo,
+        TokenStructureDict,
+    )
 
 NODE_REGISTRY: list[type[BaseNode]] = []
 
@@ -57,7 +65,6 @@ class BaseNode:
     exclusive_syntax: bool
     PATTERN: list[BaseTokenDescriptor | ChildrenDescriptor]
     _py_structure: list[TokenStructureDict]
-    parent_attr: str
 
     def __init_subclass__(cls, register: bool) -> None:
         cls._py_structure = []
@@ -106,23 +113,18 @@ class BaseNode:
             if attr:
                 instance_data[attr] = value
 
-        children_data: dict[str, list[BaseNode]] = {}
-        for node in child_nodes:
-            if node.parent_attr not in children_data:
-                children_data[node.parent_attr] = []
-            children_data[node.parent_attr].append(node)
-
-        node = cls(**children_data, **instance_data)
+        node = cls(**child_nodes, **instance_data)
         node._validate()
         return node
 
     @classmethod
     def _match_structure(
         cls, py_tokens: list[TokenInfo], exhausting: bool
-    ) -> tuple[list[BaseTokenDescriptor], list[TokenInfo], list[BaseNode]]:
+    ) -> tuple[list[BaseTokenDescriptor], list[TokenInfo], ChildNodesDict]:
         pattern_tokens: list[BaseTokenDescriptor] = []
         matched_tokens: list[TokenInfo] = []
-        child_nodes: list[BaseNode] = []
+        child_nodes: ChildNodesDict = defaultdict(list)
+
         for descriptor_structure in cls._py_structure:
             pattern_descriptor = descriptor_structure["descriptor"]
             descriptor_required = descriptor_structure["required"]
@@ -137,7 +139,8 @@ class BaseNode:
 
             # Handle case when descriptor contains children
             if isinstance(pattern_descriptor, ChildrenDescriptor):
-                child_nodes.extend(
+                attr_name = pattern_descriptor.attr
+                child_nodes[attr_name].extend(
                     cls._handle_children_descriptor(pattern_descriptor, py_tokens)
                 )
                 continue
@@ -193,7 +196,6 @@ class BaseNode:
                 node = pattern_descriptor.node.match(py_tokens, exhausting=False)
                 if node is None:
                     raise ValueError("child node matched structure but not value")
-                node.parent_attr = pattern_descriptor.attr
                 nodes.append(node)
             except RuntimeError:
                 break
