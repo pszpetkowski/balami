@@ -6,13 +6,10 @@ from balami.types import Constraint, TNode, TokenInfo, TokenStructureDict
 NODE_REGISTRY: list[type[BaseNode]] = []
 
 
-class BaseDescriptor:
-    def __init__(self, attr: str | None = None, required: bool = True) -> None:
-        self.attr = attr
-        self.required = required
+NODE_REGISTRY: list[type[BaseNode]] = []
 
 
-class ChildrenDescriptor(BaseDescriptor):
+class ChildrenDescriptor:
     def __init__(
         self,
         node: type[BaseNode],
@@ -28,7 +25,7 @@ class ChildrenDescriptor(BaseDescriptor):
         self.constraints = constraints or []
 
 
-class BaseTokenDescriptor(BaseDescriptor):
+class BaseTokenDescriptor:
     PY_TOKEN: int
 
     def __init__(
@@ -44,7 +41,8 @@ class BaseTokenDescriptor(BaseDescriptor):
         self._value = value
         self._typ = typ
         self.alt: list[BaseTokenDescriptor] = []
-        super().__init__(attr, required)
+        self.attr = attr
+        self.required = required
 
     def __or__(self, other: BaseTokenDescriptor) -> BaseTokenDescriptor:
         self.alt.append(other)
