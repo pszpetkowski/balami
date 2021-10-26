@@ -9,6 +9,9 @@ class Balami:
         self._cached_lines: dict[str, BaseNode] = {}
 
     def parse_str(self, s: str) -> list[BaseNode]:
+        if not s:
+            return []
+
         tokens = tokenize.generate_tokens(StringIO(s).readline)
         nodes: list[BaseNode] = []
         node_tokens: list[tokenize.TokenInfo] = []
