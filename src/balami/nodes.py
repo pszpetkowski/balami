@@ -49,6 +49,10 @@ class ModuleImportNode(BaseNode, register=False):
 
 
 class ImportNode(BaseNode, register=True):
+    def __init__(self, modules: list[ModuleImportNode]) -> None:
+        super().__init__()
+        self.modules = modules
+
     __repr_fields__ = ["modules"]
     exclusive_syntax = True
     PATTERN = [
